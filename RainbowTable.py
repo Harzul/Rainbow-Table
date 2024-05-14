@@ -1,9 +1,10 @@
 import hashlib
-import multiprocessing
 from abc import ABC, abstractmethod
 import random
 
 random.seed(1)
+
+
 class RT(ABC):
     _ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
     _SIZE = len(_ALPHABET)
@@ -112,7 +113,7 @@ class Table(RT):
             iteration = i
             tmp = data_hash
             while iteration < self._chain_length:
-                tmp = super()._get_hash(super()._reduced_hash(tmp, iteration))
+                tmp = self._get_hash(self._reduced_hash(tmp, iteration))
                 iteration += 1
             if value := table.get(tmp):
                 return value
@@ -121,15 +122,14 @@ class Table(RT):
 
     def find_password(self, passwd, data_hash):
         for i in range(1, self._chain_length + 1):
-            if super()._get_hash(passwd) == data_hash:
+            if self._get_hash(passwd) == data_hash:
                 return passwd
-            h = super()._get_hash(passwd)
-            passwd = super()._reduced_hash(h, i)
+            h = self._get_hash(passwd)
+            passwd = self._reduced_hash(h, i)
         return ''
 
     def __call__(self, data):
-        data_hash, filename, params = data
-        self._m, self._length = params
+        data_hash, filename = data
         table = {}
         with open(filename, 'r') as file:
             for line in file:
