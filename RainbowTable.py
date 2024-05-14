@@ -11,7 +11,7 @@ class RT(ABC):
 
     @staticmethod
     @abstractmethod
-    def _reduced_hash(h, iteration):
+    def _reduced_hash(h: str, iteration: int) -> str:
         h *= 4
         return ''.join(
             [RT._ALPHABET[int(h[(iteration + i) % 53] + h[(iteration + i) % 71], 16) % 26]
@@ -20,18 +20,18 @@ class RT(ABC):
 
     @staticmethod
     @abstractmethod
-    def _get_hash(password):
+    def _get_hash(password: str) -> str:
         return hashlib.md5(password.encode()).hexdigest()
 
     @staticmethod
     @abstractmethod
-    def _gen_word(password, iteration):
+    def _gen_word(password: str, iteration: int) -> str:
         h = RT._get_hash(password)
         return RT._reduced_hash(h, iteration)
 
     @staticmethod
     @abstractmethod
-    def _gen_passwd(*args):
+    def _gen_passwd(*args: int) -> str:
         passwd = ''
         for i in range(*args):
             passwd += RT._ALPHABET[random.randrange(0, RT._SIZE)]
@@ -39,7 +39,7 @@ class RT(ABC):
 
     @staticmethod
     @abstractmethod
-    def _gen_final_word(password, *args):
+    def _gen_final_word(password: str, *args: int) -> (str, set):
         unique = set()
         word = password
         unique.add(word)
@@ -65,22 +65,22 @@ class Table(RT):
     def chain_length(self):
         return self._chain_length
 
-    def _reduced_hash(self, h, iteration):
+    def _reduced_hash(self, h: str, iteration: int) -> str:
         return super()._reduced_hash(h, iteration)
 
-    def _get_hash(self, password):
+    def _get_hash(self, password: str) -> str:
         return super()._get_hash(password)
 
-    def _gen_word(self, password, iteration):
+    def _gen_word(self, password: str, iteration: int) -> str:
         return super()._gen_word(password, iteration)
 
-    def _gen_passwd(self):
+    def _gen_passwd(self) -> str:
         return super()._gen_passwd(self._word_length)
 
-    def _gen_final_word(self, password):
+    def _gen_final_word(self, password: str) -> str:
         return super()._gen_final_word(password, self._chain_length)
 
-    def _count_collisions(self):
+    def _count_collisions(self) -> None:
         print(
             f'Size: {len(self._unique)}/{self._m * self._chain_length} \t'
             f'Pure: {len(self._unique) / (self._m * self._chain_length) * 100:.2f}% \t'
@@ -88,12 +88,12 @@ class Table(RT):
             f'Coverage: {len(self._unique) / (pow(super()._SIZE, self._word_length)) * 100:.2f}%'
         )
 
-    def w2file(self, filename):
+    def w2file(self, filename: str) -> None:
         with open(filename, 'w') as file:
             for k, v in self._TABLE.items():
                 file.write(f'{v} {k}\n')
 
-    def generate_table(self):
+    def generate_table(self) -> None:
         i = 0
         while i < self._m:
             password = self._gen_passwd()
@@ -106,7 +106,7 @@ class Table(RT):
             i += 1
         self._count_collisions()
 
-    def in_table(self, table, data_hash):
+    def _in_table(self, table: dict, data_hash: str) -> str:
         if x := table.get(data_hash, 0):
             return x
         for i in range(self._chain_length, 0, -1):
@@ -120,7 +120,7 @@ class Table(RT):
         else:
             return ''
 
-    def find_password(self, passwd, data_hash):
+    def _find_password(self, passwd: str, data_hash: str) -> str:
         for i in range(1, self._chain_length + 1):
             if self._get_hash(passwd) == data_hash:
                 return passwd
@@ -128,7 +128,7 @@ class Table(RT):
             passwd = self._reduced_hash(h, i)
         return ''
 
-    def __call__(self, data):
+    def __call__(self, data: list[str]) -> str:
         data_hash, filename = data
         table = {}
         with open(filename, 'r') as file:
@@ -136,11 +136,11 @@ class Table(RT):
                 (key, val) = line.split()
                 table[val] = key
 
-        if not (passwd := self.in_table(table, data_hash)):
+        if not (passwd := self._in_table(table, data_hash)):
             return 'No such hash in table'
-        return f'The password is: {self.find_password(passwd, data_hash)}'
+        return f'The password is: {self._find_password(passwd, data_hash)}'
 
-    def __str__(self):
+    def __str__(self) -> str:
         for i in self._TABLE.items():
             print(i)
         for j in self._TABLE.values():
